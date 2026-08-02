@@ -3,7 +3,10 @@
 A live Streamlit web app: enter a student's behavioural and academic data and get an instant
 risk-of-failing prediction, with a SHAP waterfall chart showing exactly which factors drove it.
 
-**Stack:** Python · XGBoost · SHAP · pandas · scikit-learn · Streamlit (Streamlit Community Cloud)
+**Stack:** Python · XGBoost · SHAP (TreeSHAP) · pandas · scikit-learn · Streamlit (Streamlit Community Cloud)
+
+The app computes exact TreeSHAP values through XGBoost's own `pred_contribs=True`, so no compiled
+`shap` extension is needed at runtime and the app installs on any recent Python version.
 
 ## Model
 
@@ -18,8 +21,8 @@ risk-of-failing prediction, with a SHAP waterfall chart showing exactly which fa
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python src/train.py     # optional: regenerates models/model.json
+pip install -r requirements-dev.txt   # requirements.txt alone is enough to run the app
+python src/train.py                   # optional: regenerates models/model.json
 streamlit run app.py
 ```
 
@@ -27,7 +30,7 @@ streamlit run app.py
 
 1. Push this folder to a **public** GitHub repo (`models/model.json` must be committed).
 2. Go to https://share.streamlit.io → **Create app** → pick the repo/branch.
-3. Main file path: `app.py`. Python version: 3.10+.
+3. Main file path: `app.py`. Any Python 3.10+ works.
 4. Deploy — you get a public URL like `https://<app-name>.streamlit.app`.
 
 Dependencies come from `requirements.txt`; no secrets or config are required.

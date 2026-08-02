@@ -5,9 +5,10 @@ import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-import shap
 import streamlit as st
+import xgboost as xgb
 from xgboost import XGBClassifier
 
 ROOT = Path(__file__).resolve().parent
@@ -33,9 +34,11 @@ def load_model() -> tuple[XGBClassifier, dict]:
     return model, metrics
 
 
-@st.cache_resource
-def load_explainer(_model: XGBClassifier) -> shap.TreeExplainer:
-    return shap.TreeExplainer(_model)
+def shap_contributions(model: XGBClassifier, row: pd.DataFrame) -> tuple[np.ndarray, float]:
+    """Exact TreeSHAP values from XGBoost itself (last column is the base value)."""
+    matrix = xgb.DMatrix(row.values, feature_names=FEATURE_ORDER)
+    contributions = model.get_booster().predict(matrix, pred_contribs=True)[0]
+    return contributions[:-1], float(contributions[-1])
 
 
 def collect_inputs() -> pd.DataFrame:
@@ -73,17 +76,19 @@ def risk_band(probability: float) -> tuple[str, str]:
     return "Low risk", "#1e8449"
 
 
-def waterfall_chart(explainer: shap.TreeExplainer, row: pd.DataFrame):
-    values = explainer(row.rename(columns=FEATURE_LABELS))
-    fig = plt.figure()
-    shap.plots.waterfall(values[0], max_display=12, show=False)
-    fig.set_size_inches(9, 6)
+def contribution_chart(table: pd.DataFrame):
+    fig, ax = plt.subplots(figsize=(9, 6))
+    ordered = table.iloc[::-1]
+    colours = ["#c0392b" if value > 0 else "#2874c9" for value in ordered["SHAP impact"]]
+    ax.barh(ordered["Feature"] + "  =  " + ordered["Value"].astype(str), ordered["SHAP impact"], color=colours)
+    ax.axvline(0, color="#444", linewidth=1)
+    ax.set_xlabel("Impact on risk (log-odds)")
+    ax.spines[["top", "right"]].set_visible(False)
     plt.tight_layout()
-    return fig, values
+    return fig
 
 
 model, metrics = load_model()
-explainer = load_explainer(model)
 
 st.title("🎓 StudentRisk AI")
 st.write(
@@ -94,6 +99,21 @@ st.write(
 row = collect_inputs()
 probability = float(model.predict_proba(row)[0, 1])
 band, colour = risk_band(probability)
+values, base_value = shap_contributions(model, row)
+
+table = (
+    pd.DataFrame(
+        {
+            "Feature": [FEATURE_LABELS[name] for name in FEATURE_ORDER],
+            "Value": row.iloc[0].values,
+            "SHAP impact": values,
+        }
+    )
+    .assign(magnitude=lambda d: d["SHAP impact"].abs())
+    .sort_values("magnitude", ascending=False)
+    .drop(columns="magnitude")
+    .reset_index(drop=True)
+)
 
 left, right = st.columns([1, 2])
 with left:
@@ -112,30 +132,14 @@ with left:
 
 with right:
     st.subheader("Why this prediction?")
-    fig, shap_values = waterfall_chart(explainer, row)
-    st.pyplot(fig, clear_figure=True)
+    st.pyplot(contribution_chart(table.head(12)), clear_figure=True)
     st.caption(
-        "Red bars push the student towards being at risk, blue bars towards being on track. "
-        "The baseline is the average student in the training data."
+        "Exact TreeSHAP values. Red bars push the student towards being at risk, blue bars "
+        f"towards being on track, starting from the average student (base value {base_value:.2f})."
     )
-
-contributions = (
-    pd.DataFrame(
-        {
-            "Feature": [FEATURE_LABELS[name] for name in FEATURE_ORDER],
-            "Value": row.iloc[0].values,
-            "SHAP impact": shap_values.values[0],
-        }
-    )
-    .assign(magnitude=lambda d: d["SHAP impact"].abs())
-    .sort_values("magnitude", ascending=False)
-    .drop(columns="magnitude")
-    .head(8)
-    .reset_index(drop=True)
-)
 
 with st.expander("Top contributing factors (table)"):
-    st.dataframe(contributions, use_container_width=True)
+    st.dataframe(table.head(10), width='stretch')
 
 st.caption(
     "Decision support only — predictions are statistical estimates and should never replace "
