@@ -1,0 +1,33 @@
+{
+  "accuracy": 0.8852,
+  "roc_auc": 0.9415,
+  "n_train": 835,
+  "n_test": 209,
+  "at_risk_rate": 0.2203,
+  "features": [
+    "age",
+    "Medu",
+    "Fedu",
+    "traveltime",
+    "studytime",
+    "failures",
+    "famrel",
+    "freetime",
+    "goout",
+    "Dalc",
+    "Walc",
+    "health",
+    "absences",
+    "G1",
+    "G2",
+    "schoolsup",
+    "famsup",
+    "paid",
+    "activities",
+    "higher",
+    "internet",
+    "romantic",
+    "is_female",
+    "is_urban"
+  ]
+}
