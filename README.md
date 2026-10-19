@@ -12,8 +12,16 @@ risk-of-failing prediction, with a SHAP waterfall chart showing exactly which fa
 
 - **Instant risk prediction** — 24 behavioural and academic features in, one probability out
   (Low / Moderate / High band with colour-coded status).
+- **One-click examples** — load a high/moderate/low-risk profile and see the app work in
+  seconds, no slider homework required.
 - **Exact SHAP explanations** — every prediction comes with a ranked bar chart of the factors
   that pushed it up or down, in log-odds, from the average student's baseline.
+- **Plain-English summary** — the top drivers translated into readable sentences, so a teacher
+  never has to interpret a log-odds number.
+- **Whole-class mode** — upload a class CSV and get a ranked risk report with each student's
+  strongest driver, plus a downloadable CSV.
+- **Downloadable explanation** — export any single-student SHAP chart as a PNG for reports
+  and case notes.
 - **No heavy runtime** — TreeSHAP values are computed through XGBoost's own
   `pred_contribs=True`, so the compiled `shap` extension is not needed at deploy time.
 - **One-click deploy** — runs on Streamlit Community Cloud with no secrets or configuration.
