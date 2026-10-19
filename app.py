@@ -28,6 +28,7 @@ st.set_page_config(page_title="StudentRisk AI", page_icon="🎓", layout="wide")
 
 @st.cache_resource
 def load_model() -> tuple[XGBClassifier, dict]:
+    """Load the trained XGBoost model and its metrics (cached across reruns)."""
     model = XGBClassifier()
     model.load_model(MODEL_DIR / "model.json")
     metrics = json.loads((MODEL_DIR / "metrics.json").read_text())
@@ -42,6 +43,7 @@ def shap_contributions(model: XGBClassifier, row: pd.DataFrame) -> tuple[np.ndar
 
 
 def collect_inputs() -> pd.DataFrame:
+    """Build the sidebar of sliders/selectors and return one encoded row."""
     values: dict[str, int] = {}
     with st.sidebar:
         st.header("Student profile")
@@ -69,6 +71,7 @@ def collect_inputs() -> pd.DataFrame:
 
 
 def risk_band(probability: float) -> tuple[str, str]:
+    """Map a failure probability to a (label, colour) band for display."""
     if probability >= 0.6:
         return "High risk", "#c0392b"
     if probability >= 0.3:
@@ -77,6 +80,7 @@ def risk_band(probability: float) -> tuple[str, str]:
 
 
 def contribution_chart(table: pd.DataFrame):
+    """Horizontal bar chart of SHAP impacts — red pushes risk up, blue down."""
     fig, ax = plt.subplots(figsize=(9, 6))
     ordered = table.iloc[::-1]
     colours = ["#c0392b" if value > 0 else "#2874c9" for value in ordered["SHAP impact"]]
@@ -139,7 +143,7 @@ with right:
     )
 
 with st.expander("Top contributing factors (table)"):
-    st.dataframe(table.head(10), width='stretch')
+    st.dataframe(table.head(10), use_container_width=True)
 
 st.caption(
     "Decision support only — predictions are statistical estimates and should never replace "

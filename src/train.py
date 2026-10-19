@@ -16,6 +16,7 @@ MODEL_DIR = ROOT / "models"
 
 
 def load_dataset() -> pd.DataFrame:
+    """Load and concatenate the Maths and Portuguese UCI CSVs, tagged by subject."""
     frames = []
     for name, subject in (("student-por.csv", "portuguese"), ("student-mat.csv", "math")):
         frame = pd.read_csv(DATA_DIR / name, sep=";")
@@ -25,6 +26,7 @@ def load_dataset() -> pd.DataFrame:
 
 
 def main() -> None:
+    """Train the classifier, evaluate on the held-out split, and save model + metrics."""
     raw = load_dataset()
     X = encode(raw)
     y = (raw["G3"] < PASS_MARK).astype(int)

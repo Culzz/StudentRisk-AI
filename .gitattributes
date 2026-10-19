@@ -1,0 +1,20 @@
+# Normalise line endings across platforms
+* text=auto
+
+# Explicitly text types
+*.py text
+*.md text
+*.txt text
+*.toml text
+*.json text
+*.csv text
+
+# Shell scripts must stay LF to run in Linux containers
+*.sh text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.joblib binary

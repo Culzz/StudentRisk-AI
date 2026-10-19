@@ -1,4 +1,33 @@
+# Environments
 .venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Python
 __pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Caches / tooling
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Raw dataset archives (CSVs themselves are committed for deployment)
 data/*.zip
-data/.student.zip_old
+data/*.zip_old
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
