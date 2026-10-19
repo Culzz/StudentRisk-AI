@@ -66,7 +66,8 @@ No API keys, database, or configuration are required — the model and metrics s
 
 1. Push this folder to a **public** GitHub repo (`models/model.json` must be committed).
 2. Go to https://share.streamlit.io → **Create app** → pick the repo/branch.
-3. Main file path: `app.py`. Any Python 3.10+ works.
+3. Main file path: `app.py`. Python is pinned to **3.11** via `.python-version` (pick 3.11
+   under *Advanced settings → Python version* if you're asked).
 4. Deploy — you get a public URL like `https://<app-name>.streamlit.app`.
 
 Dependencies come from `requirements.txt`; no secrets or config are required.
