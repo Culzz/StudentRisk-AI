@@ -1,2 +1,1 @@
 -r requirements.txt
-scikit-learn>=1.5
