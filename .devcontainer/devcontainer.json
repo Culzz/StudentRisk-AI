@@ -1,5 +1,5 @@
 {
-  "name": "Python 3",
+  "name": "StudentRisk AI",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
   "customizations": {
     "codespaces": {
@@ -16,17 +16,17 @@
       ]
     }
   },
-  "updateContentCommand": "[ -f requirements.txt ] && pip3 install --user -r requirements.txt; echo '✅ Requirements installed'",
+  "updateContentCommand": "[ -f requirements-dev.txt ] && pip3 install --user -r requirements-dev.txt; echo '✅ Requirements installed'",
   "postAttachCommand": {
-    "server": "streamlit run app.py"
+    "server": "python app.py"
   },
   "portsAttributes": {
-    "8501": {
+    "5000": {
       "label": "Application",
       "onAutoForward": "openPreview"
     }
   },
   "forwardPorts": [
-    8501
+    5000
   ]
 }

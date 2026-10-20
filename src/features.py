@@ -1,6 +1,6 @@
-"""Feature schema shared by training and the Streamlit app."""
+"""Feature schema shared by training and the web app."""
 
-import pandas as pd
+from __future__ import annotations
 
 BINARY_FEATURES = {
     "schoolsup": "Extra school support",
@@ -48,8 +48,10 @@ FEATURE_LABELS = {
 PASS_MARK = 10
 
 
-def encode(raw: pd.DataFrame) -> pd.DataFrame:
+def encode(raw):
     """Turn raw UCI-style columns into the numeric matrix the model expects."""
+    import pandas as pd  # imported lazily so the web API can use the schema without pandas
+
     df = pd.DataFrame(index=raw.index)
     for name in NUMERIC_FEATURES:
         df[name] = pd.to_numeric(raw[name])

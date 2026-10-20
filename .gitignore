@@ -5,7 +5,12 @@ env/
 .env
 .env.*
 !.env.example
-.streamlit/secrets.toml
+
+# Vercel (created by the vercel CLI)
+.vercel/
+
+# Logs
+*.log
 
 # Python
 __pycache__/

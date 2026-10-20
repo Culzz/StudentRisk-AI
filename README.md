@@ -1,32 +1,87 @@
 # 🎓 StudentRisk AI
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/app-Streamlit-FF4B4B.svg)](https://streamlit.io)
+[![Python 3.12](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Flask](https://img.shields.io/badge/web-Flask%20%2B%20vanilla%20JS-333.svg)](https://flask.palletsprojects.com/)
 [![XGBoost](https://img.shields.io/badge/model-XGBoost-1f77b4.svg)](https://xgboost.readthedocs.io/)
 
-A live Streamlit web app: enter a student's behavioural and academic data and get an instant
-risk-of-failing prediction, with a SHAP waterfall chart showing exactly which factors drove it.
+A vintage-styled web app that predicts a student's risk of failing the year from 24 behavioural
+and academic signals — and explains **every** prediction with exact TreeSHAP values plus a
+plain-English summary.
+
+Built as a small Flask API serving a hand-crafted single-page frontend. No JavaScript
+frameworks, no database, no API keys — the trained model ships with the repo.
 
 ## Features
 
-- **Instant risk prediction** — 24 behavioural and academic features in, one probability out
-  (Low / Moderate / High band with colour-coded status).
-- **One-click examples** — load a high/moderate/low-risk profile and see the app work in
-  seconds, no slider homework required.
-- **Exact SHAP explanations** — every prediction comes with a ranked bar chart of the factors
-  that pushed it up or down, in log-odds, from the average student's baseline.
-- **Plain-English summary** — the top drivers translated into readable sentences, so a teacher
-  never has to interpret a log-odds number.
-- **Whole-class mode** — upload a class CSV and get a ranked risk report with each student's
-  strongest driver, plus a downloadable CSV.
-- **Downloadable explanation** — export any single-student SHAP chart as a PNG for reports
-  and case notes.
-- **No heavy runtime** — TreeSHAP values are computed through XGBoost's own
-  `pred_contribs=True`, so the compiled `shap` extension is not needed at deploy time.
-- **One-click deploy** — runs on Streamlit Community Cloud with no secrets or configuration.
+- **Instant risk prediction** — 24 signals in, one probability out, with a colour-coded
+  Low / Moderate / High band and a mercury-style risk meter.
+- **One-click examples** — load a high/moderate/low-risk profile and watch the score change as
+  you adjust any slider.
+- **Exact SHAP explanations** — a diverging bar chart of the factors that pushed the score up
+  (oxblood) or down (navy), computed by XGBoost's own `pred_contribs=True` — no compiled `shap`
+  extension needed.
+- **Plain-English summary** — the top drivers translated into readable sentences for non-ML
+  readers.
+- **PNG export** — download any explanation as a clean image for reports and case notes.
+- **Whole-class scan** — drop a CSV of a full roster, get everyone ranked with their strongest
+  driver, band counts, and a downloadable report.
+- **Zero-config deploy** — Vercel detects the Flask app and serves the frontend from `public/`.
 - **Reproducible training** — `src/train.py` regenerates `models/model.json` and
   `models/metrics.json` from the bundled UCI data with a fixed seed.
+
+## Quick start
+
+```bash
+python -m venv .venv
+# Linux / macOS
+source .venv/bin/activate
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+python app.py            # → http://localhost:5000
+```
+
+The model and metrics ship with the repo — no configuration required.
+
+## Deploy on Vercel
+
+1. Push this repo to GitHub (already done: `Culzz/StudentRisk-AI`).
+2. Go to [vercel.com/new](https://vercel.com/new) and import the repository — Vercel
+   auto-detects Flask from `requirements.txt` and the top-level `app` in `app.py`.
+   The `.python-version` file pins Python 3.12.
+3. Deploy. No build command, no environment variables, no database.
+
+The frontend is served from `public/` (Vercel's CDN); `app.py` handles the API routes.
+
+## API
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/health` | Liveness probe |
+| `GET` | `/api/schema` | Feature definitions, presets, band thresholds, metrics |
+| `POST` | `/api/predict` | One student → probability, band, full SHAP breakdown |
+| `POST` | `/api/batch` | Up to 2,000 students → probability, band, strongest driver |
+
+Example:
+
+```bash
+curl -X POST http://localhost:5000/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{"values": {"G1": 6, "G2": 7, "failures": 2, "absences": 30, "sex": "Female", "area": "Urban"}}'
+```
+
+`/api/predict` accepts partial objects — anything omitted falls back to the schema default,
+so a two-field request already returns a valid prediction.
+
+## Retraining
+
+```bash
+pip install -r requirements-train.txt   # adds pandas + matplotlib on top of the app deps
+python src/train.py                     # regenerates models/model.json + models/metrics.json
+python src/train.py --help              # all options
+```
 
 ## Model
 
@@ -46,47 +101,37 @@ risk-of-failing prediction, with a SHAP waterfall chart showing exactly which fa
 
 Exact values live in [`models/metrics.json`](models/metrics.json); retraining reproduces them.
 
-## Run locally
+## Tests
 
 ```bash
-python -m venv .venv
-# Linux / macOS
-source .venv/bin/activate
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-
-pip install -r requirements-dev.txt   # requirements.txt alone is enough to run the app
-python src/train.py                   # optional: regenerates models/model.json
-streamlit run app.py
+pip install -r requirements-dev.txt
+pytest tests/
 ```
 
-No API keys, database, or configuration are required — the model and metrics ship with the repo.
-
-## Deploy free on Streamlit Community Cloud
-
-1. Push this folder to a **public** GitHub repo (`models/model.json` must be committed).
-2. Go to https://share.streamlit.io → **Create app** → pick the repo/branch.
-3. Main file path: `app.py`. Python is pinned to **3.11** via `.python-version` (pick 3.11
-   under *Advanced settings → Python version* if you're asked).
-4. Deploy — you get a public URL like `https://<app-name>.streamlit.app`.
-
-Dependencies come from `requirements.txt`; no secrets or config are required.
+The suite includes parity checks: the web encoder must produce the same feature vector as the
+training pipeline's `src.features.encode`, and the API's probabilities must match XGBoost's
+sklearn wrapper to float precision.
 
 ## Layout
 
 ```
-app.py               Streamlit UI + SHAP explanation
-src/features.py      Shared feature schema and encoding
-src/train.py         Training script
-models/              Trained model (model.json) + metrics (metrics.json)
-data/                UCI CSVs + attribute descriptions
-.devcontainer/       Codespaces / VS Code dev container config
+app.py                  Flask app: static serving + JSON API (this is what Vercel runs)
+public/index.html       Single-page frontend (hand-crafted, no framework)
+public/assets/          style.css (vintage design system) · app.js (form, chart, CSV)
+src/features.py         Shared feature schema (single source of truth)
+src/train.py            Training script
+models/                 Trained model (model.json) + metrics (metrics.json)
+data/                   UCI CSVs + attribute descriptions
+tests/test_api.py       API + parity tests
 ```
 
 ## Limitations & Ethics
 
 - The model is trained on Portuguese secondary-school data (2005–2006); treat performance on
   other populations as unvalidated until retrained locally.
+- The 1,044 records come from 662 unique students, so the same student's two course records can
+  land on both sides of the 80/20 split — the model sees overlapping individuals across train
+  and test, and the metrics must be read with that in mind.
 - Predictions are statistical estimates for **decision support only** — they must never replace
   a teacher's judgement, and should not be used as the sole basis for any decision about a
   student.

@@ -1,0 +1,4 @@
+# Training / analysis extras — the web app itself only needs requirements.txt.
+-r requirements.txt
+pandas>=2.2
+matplotlib>=3.8
