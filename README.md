@@ -4,10 +4,13 @@
 [![Python 3.12](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Flask](https://img.shields.io/badge/web-Flask%20%2B%20vanilla%20JS-333.svg)](https://flask.palletsprojects.com/)
 [![XGBoost](https://img.shields.io/badge/model-XGBoost-1f77b4.svg)](https://xgboost.readthedocs.io/)
+[![Live on Vercel](https://img.shields.io/badge/live-studentrisk--ai.vercel.app-2eb0a8.svg)](https://studentrisk-ai.vercel.app)
 
 A vintage-styled web app that predicts a student's risk of failing the year from 24 behavioural
 and academic signals — and explains **every** prediction with exact TreeSHAP values plus a
 plain-English summary.
+
+**🚀 Live demo: [studentrisk-ai.vercel.app](https://studentrisk-ai.vercel.app)**
 
 Built as a small Flask API serving a hand-crafted single-page frontend. No JavaScript
 frameworks, no database, no API keys — the trained model ships with the repo.
@@ -51,6 +54,8 @@ The model and metrics ship with the repo — no configuration required.
 2. Go to [vercel.com/new](https://vercel.com/new) and import the repository — Vercel
    auto-detects Flask from `requirements.txt` and the top-level `app` in `app.py`.
    The `.python-version` file pins Python 3.12.
+   *(If the build skips the Python step, open the project's Settings → Framework
+   and set it to **Python** — that forces the serverless route.)*
 3. Deploy. No build command, no environment variables, no database.
 
 The frontend is served from `public/` (Vercel's CDN); `app.py` handles the API routes.
@@ -78,7 +83,7 @@ so a two-field request already returns a valid prediction.
 ## Retraining
 
 ```bash
-pip install -r requirements-train.txt   # adds pandas + matplotlib on top of the app deps
+pip install -r requirements-train.txt   # adds pandas, matplotlib, scikit-learn on top of the app deps
 python src/train.py                     # regenerates models/model.json + models/metrics.json
 python src/train.py --help              # all options
 ```
