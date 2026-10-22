@@ -33,6 +33,24 @@ frameworks, no database, no API keys — the trained model ships with the repo.
 - **Reproducible training** — `src/train.py` regenerates `models/model.json` and
   `models/metrics.json` from the bundled UCI data with a fixed seed.
 
+## Architecture
+
+```mermaid
+flowchart TD
+    B[Visitor's browser] -- HTTPS --> E[Vercel Edge]
+    E -- "static assets" --> S[public/<br/>index.html · style.css · app.js · icons]
+    E -- "/api/* routed to the Flask function" --> F[app.py<br/>Flask on Vercel Python 3.12]
+    F -- "loads once per cold start" --> M[models/model.json<br/>XGBoost booster]
+    M -- "pred_contribs=True" --> H[exact TreeSHAP contributions]
+    F -- "reads ordering + labels + defaults" --> G[src/features.py<br/>single source of truth]
+    F -- "logit + sigmoid → banding" --> O[JSON: probability · band · drivers · summary]
+    O -- rendered by --> S
+```
+
+The web encoder (`encode_values`) and the training encoder (`src.features.encode`)
+are kept bug-compatible by a pytest parity test, so the offline training pipeline and
+the live API always speak the same feature language.
+
 ## Quick start
 
 ```bash
@@ -129,6 +147,16 @@ models/                 Trained model (model.json) + metrics (metrics.json)
 data/                   UCI CSVs + attribute descriptions
 tests/test_api.py       API + parity tests
 ```
+
+## Security and Privacy
+
+- **Stateless by design** — no accounts, no cookies, no database: nothing about a
+  visitor is stored server-side or written to disk at request time.
+- **No secrets** — the app needs zero environment variables; the model ships in-repo.
+- **Upload safety** — `/api/batch` only accepts JSON arrays of plain objects
+  (2,000 rows max), never files; nothing is eval'd or written.
+- **Honest limits** — there is no rate limiting or API key yet; if you expose it
+  publicly beyond Vercel's scale guardrails, add one first.
 
 ## Limitations & Ethics
 
