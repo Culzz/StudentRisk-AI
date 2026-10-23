@@ -12,6 +12,8 @@ plain-English summary.
 
 **🚀 Live demo: [studentrisk-ai.vercel.app](https://studentrisk-ai.vercel.app)**
 
+![Live app preview](https://s0.wp.com/mshots/v1/https%3A%2F%2Fstudentrisk-ai.vercel.app%2F?w=1440&h=2400)
+
 Built as a small Flask API serving a hand-crafted single-page frontend. No JavaScript
 frameworks, no database, no API keys — the trained model ships with the repo.
 
