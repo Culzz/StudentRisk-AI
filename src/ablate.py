@@ -148,12 +148,42 @@ def main() -> None:
     }
     print(f"[rule_G2_below_10] {json.dumps(ablation['rule_G2_below_10'])}")
 
-    # Calibration of the shipped model (loaded from models/model.json).
+    # Fairness: error rates by protected/structural groups, and the effect of
+    # dropping the protected attributes from the feature set entirely.
+    from sklearn.metrics import accuracy_score as _acc
     from xgboost import XGBClassifier as _XGB
+
     shipped = _XGB()
     shipped.load_model(MODEL_DIR / "model.json")
+    X_te_all = X_all.iloc[test_idx]
+    proba = shipped.predict_proba(X_te_all)[:, 1]
+    preds = (proba >= 0.5).astype(int)
     y_te = y.iloc[test_idx].to_numpy()
-    proba = shipped.predict_proba(X_all.iloc[test_idx])[:, 1]
+    group_report = {}
+    for col in ("sex", "address"):
+        for value in sorted(raw[col].unique()):
+            mask = (raw[col].iloc[test_idx].to_numpy() == value)
+            if mask.sum() < 20:
+                continue
+            fp = int(((preds == 1) & (y_te == 0) & mask).sum())
+            fn = int(((preds == 0) & (y_te == 1) & mask).sum())
+            group_report[f"{col}={value}"] = {
+                "n": int(mask.sum()),
+                "accuracy": round(float(_acc(y_te[mask], preds[mask])), 4),
+                "false_positives": fp,
+                "false_negatives": fn,
+            }
+    fairness = {"groups": group_report}
+
+    protected = {"is_female", "is_urban"}
+    cols_prot = [FEATURE_ORDER.index(f) for f in FEATURE_ORDER if f not in protected]
+    fairness["without_sex_or_address"] = metrics_row(
+        make_model(), X_all.iloc[train_idx, cols_prot], y.iloc[train_idx],
+        X_all.iloc[test_idx, cols_prot], y.iloc[test_idx])
+    print(f"[fairness] {json.dumps(fairness)}")
+
+    # Calibration of the shipped model (loaded from models/model.json).
+    calibrated_proba = proba
     brier = float(brier_score_loss(y_te, proba))
     bins = np.quantile(proba, np.linspace(0, 1, 11))
     table = []
@@ -176,6 +206,7 @@ def main() -> None:
         "seed": SEED,
     }
     out["ablation"] = ablation
+    out["fairness"] = fairness
     out["calibration"] = calibration
     MODEL_DIR.mkdir(exist_ok=True)
     (MODEL_DIR / "metrics.json").write_text(json.dumps(out, indent=2))

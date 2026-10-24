@@ -129,5 +129,41 @@
         "count": 21
       }
     ]
+  },
+  "fairness": {
+    "groups": {
+      "sex=F": {
+        "n": 112,
+        "accuracy": 0.9554,
+        "false_positives": 4,
+        "false_negatives": 1
+      },
+      "sex=M": {
+        "n": 96,
+        "accuracy": 0.9167,
+        "false_positives": 3,
+        "false_negatives": 5
+      },
+      "address=R": {
+        "n": 51,
+        "accuracy": 0.9412,
+        "false_positives": 1,
+        "false_negatives": 2
+      },
+      "address=U": {
+        "n": 157,
+        "accuracy": 0.9363,
+        "false_positives": 6,
+        "false_negatives": 4
+      }
+    },
+    "without_sex_or_address": {
+      "accuracy": 0.9183,
+      "roc_auc": 0.9712,
+      "recall_at_0.2": 0.9048,
+      "recall_at_0.3": 0.881,
+      "recall_at_0.5": 0.8095,
+      "n_test": 208
+    }
   }
 }
