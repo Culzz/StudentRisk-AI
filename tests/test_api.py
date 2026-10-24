@@ -4,6 +4,7 @@ Includes parity checks: the web encoder must match ``src.features.encode`` and
 the API's probabilities must match XGBoost's sklearn wrapper.
 """
 
+import json
 import sys
 from pathlib import Path
 
@@ -54,7 +55,10 @@ def test_schema_shape():
     assert len(payload["binaries"]) == 7
     assert len(payload["feature_order"]) == 24
     assert set(payload["presets"]) == {"high", "moderate", "low"}
-    assert payload["metrics"]["accuracy"] == pytest.approx(0.8852, abs=1e-4)
+    # The published accuracy must be whatever the shipped metrics file says,
+    # not a hard-coded number that drifts when the model is retrained.
+    published = json.loads((Path(__file__).resolve().parents[1] / "models" / "metrics.json").read_text())
+    assert payload["metrics"]["accuracy"] == pytest.approx(published["accuracy"], abs=1e-4)
     assert len(payload["groups"]) == 5
 
 

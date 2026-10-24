@@ -111,20 +111,48 @@ python src/train.py --help              # all options
 ## Model
 
 - Data: [UCI Student Performance](https://archive.ics.uci.edu/dataset/320/student+performance)
-  (1,044 course records — 395 Maths + 649 Portuguese — from 662 unique students).
+  (1,044 course records — 395 Maths + 649 Portuguese — from **661 unique
+  students**, grouped split verified below).
 - Target: final grade `G3 < 10` (failing the year).
 - 24 features: term grades, study time, past failures, absences, going out, alcohol use,
   health, family support, and background.
-- Split: stratified 80/20, `random_state=42`.
+- **Split: grouped by student** (`GroupShuffleSplit`, seed 42) — the 1,044 records cover
+  661 students because 366 of them attend both course files; a plain row split would put
+  the same student on both sides (leakage). The identity hash that reproduces the UCI
+  merge count is exactly the demographic core: school, sex, age, address, family size &
+  status, parental education/jobs, reason and guardian. Survey-reported habits are
+  recorded per course and are too noisy to serve as identity.
 
-| Metric | Value |
-|---|---|
-| Test accuracy | **88.5%** |
-| ROC-AUC | **0.9415** |
-| Train / test size | 835 / 209 |
-| At-risk rate | 22.0% |
+### Ablation — what each feature block is really worth
 
-Exact values live in [`models/metrics.json`](models/metrics.json); retraining reproduces them.
+Same XGBoost configuration, same leakage-free grouped split, three feature sets,
+plus the one-line rule a sceptical reviewer would suggest:
+
+| Variant | Accuracy | ROC-AUC | Recall @0.2 | Recall @0.5 |
+|---|---|---|---|---|
+| All 24 features (term-2 standings view) | **93.8%** | 0.972 | 0.905 | 0.857 |
+| Without `G2` | 88.5% | 0.929 | 0.810 | 0.762 |
+| Without `G1`/`G2` (true early-warning view) | 81.7% | 0.725 | 0.524 | 0.262 |
+| Rule: `G2 < 10` alone | 91.4% | 0.975 | — | **0.952** |
+
+Three honest takeaways:
+
+1. **With term-2 grades in hand, G2 nearly is the answer.** The trained model barely
+   beats the trivial `G2 < 10` rule on accuracy and loses to it on recall — so when the
+   term grade exists, prefer the obvious screen; the model's extra edge is marginal.
+2. **The model's real value is as an early-warning view.** Without `G2` it still reaches
+   **0.93 AUC / 76% recall at the 0.5 threshold** — genuinely useful before the decisive
+   term grade lands. Dropping both term grades degrades it to a weak pointer
+   (0.72 AUC) — background variables alone don't separate risk well.
+3. **Calibration is good at the extremes, mushy in the middle** — Brier **0.077**; the
+   bottom-decile predictions land at 0–5% observed risk and the top decile at 95%, but
+   the mid-range over-predicts certainty (a bucket predicted at 0.08 saw 0.48). Read
+   mid-band scores as "needs a human decision", not as a number.
+
+Full machine-readable versions of all three tables live in
+[`models/metrics.json`](models/metrics.json) (`ablation`, `grouping`,
+`calibration` keys); retraining regenerates them with `src/train.py` +
+`src/ablate.py`.
 
 ## Tests
 
@@ -160,16 +188,37 @@ tests/test_api.py       API + parity tests
 - **Honest limits** — there is no rate limiting or API key yet; if you expose it
   publicly beyond Vercel's scale guardrails, add one first.
 
+## Roadmap
+
+- [ ] **Early-warning mode in the app** — ship the no-`G2` model as a "term-1" toggle
+  alongside the standings view (the ablation already shows its 0.93 AUC is real)
+- [ ] **Fairness audit** — error rates by sex and urban/rural; test dropping protected
+  attributes and show the effect
+- [ ] **Intervention recommendations** — map each flagged student's top *changeable*
+  driver (absences, study time) to a concrete action
+- [ ] **Capacity triage list** — "I can follow up with 8 students this week" → the exact
+  ranked list, reason beside each name (recall at a capped review budget)
+- [ ] Probability recalibration (Platt scaling) applied to the served score
+
 ## Limitations & Ethics
 
-- The model is trained on Portuguese secondary-school data (2005–2006); treat performance on
-  other populations as unvalidated until retrained locally.
-- The 1,044 records come from 662 unique students, so the same student's two course records can
-  land on both sides of the 80/20 split — the model sees overlapping individuals across train
-  and test, and the metrics must be read with that in mind.
-- Predictions are statistical estimates for **decision support only** — they must never replace
-  a teacher's judgement, and should not be used as the sole basis for any decision about a
-  student.
+- **Provenance scope**: trained on Portuguese secondary-school data (2005–2006). Treat
+  performance on other populations — including Nigerian universities — as *unvalidated*
+  until the pipeline is retrained locally with that country's grading context.
+- **Not an early-warning oracle without grades**: with both term grades the model
+  tracks standings (see Ablation); before term grades exist, background-only signals
+  reach just 0.72 AUC — use the without-`G2` running view and always pair the score
+  with a human check.
+- **Mid-band probabilities are soft**: calibration is tight at 0–5% and >95% risk, but
+  scores between ~0.1 and ~0.6 over-predict certainty; a "Moderate risk" score means
+  *look closer*, not *this student will fail*.
+- **Decision support, not a decision.** Predictions are statistical estimates that must
+  never replace a teacher's judgement, and should not be the sole basis for any action
+  about a student.
+- **Fairness not yet audited**: the feature list includes sex, urban/rural address and
+  parental education — screening naturally waters demographic pasts; group-level error
+  rates are not analysed yet (tracked in the roadmap) and protected-attribute inputs
+  should be dropped before any real-world rollout.
 
 ## Citation
 

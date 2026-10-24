@@ -1,9 +1,11 @@
 {
-  "accuracy": 0.8852,
-  "roc_auc": 0.9415,
-  "n_train": 835,
-  "n_test": 209,
+  "accuracy": 0.9375,
+  "roc_auc": 0.9722,
+  "n_train": 836,
+  "n_test": 208,
   "at_risk_rate": 0.2203,
+  "n_students": 661,
+  "split": "grouped by student (GroupShuffleSplit, seed 42)",
   "features": [
     "age",
     "Medu",
@@ -29,5 +31,103 @@
     "romantic",
     "is_female",
     "is_urban"
-  ]
+  ],
+  "grouping": {
+    "split": "GroupShuffleSplit by student (md5 of identity columns)",
+    "unique_students": 661,
+    "records": 1044,
+    "seed": 42
+  },
+  "ablation": {
+    "all_features": {
+      "accuracy": 0.9375,
+      "roc_auc": 0.9722,
+      "recall_at_0.2": 0.9048,
+      "recall_at_0.3": 0.9048,
+      "recall_at_0.5": 0.8571,
+      "n_test": 208,
+      "features": 24
+    },
+    "without_G2": {
+      "accuracy": 0.8846,
+      "roc_auc": 0.9294,
+      "recall_at_0.2": 0.8095,
+      "recall_at_0.3": 0.8095,
+      "recall_at_0.5": 0.7619,
+      "n_test": 208,
+      "features": 23
+    },
+    "without_G1_G2": {
+      "accuracy": 0.8173,
+      "roc_auc": 0.7245,
+      "recall_at_0.2": 0.5238,
+      "recall_at_0.3": 0.3571,
+      "recall_at_0.5": 0.2619,
+      "n_test": 208,
+      "features": 22
+    },
+    "rule_G2_below_10": {
+      "accuracy": 0.9135,
+      "roc_auc": 0.9745,
+      "recall_at_0.2": 0.0476,
+      "recall_at_0.3": 0.0476,
+      "recall_at_0.5": 0.9524,
+      "features": 1
+    }
+  },
+  "calibration": {
+    "brier": 0.0549,
+    "deciles": [
+      {
+        "predicted_mean": 0.0001,
+        "observed_risk": 0.0,
+        "count": 21
+      },
+      {
+        "predicted_mean": 0.0002,
+        "observed_risk": 0.0,
+        "count": 21
+      },
+      {
+        "predicted_mean": 0.0004,
+        "observed_risk": 0.0,
+        "count": 21
+      },
+      {
+        "predicted_mean": 0.0007,
+        "observed_risk": 0.0,
+        "count": 20
+      },
+      {
+        "predicted_mean": 0.0014,
+        "observed_risk": 0.0,
+        "count": 21
+      },
+      {
+        "predicted_mean": 0.0042,
+        "observed_risk": 0.0,
+        "count": 21
+      },
+      {
+        "predicted_mean": 0.0457,
+        "observed_risk": 0.1,
+        "count": 20
+      },
+      {
+        "predicted_mean": 0.2728,
+        "observed_risk": 0.2381,
+        "count": 21
+      },
+      {
+        "predicted_mean": 0.8227,
+        "observed_risk": 0.7143,
+        "count": 21
+      },
+      {
+        "predicted_mean": 0.9906,
+        "observed_risk": 0.9524,
+        "count": 21
+      }
+    ]
+  }
 }
